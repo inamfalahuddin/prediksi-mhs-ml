@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Dashboard
+{% endblock %}
+
+{% block content %}
+    <!-- Page Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h4 class="h3 mb-2 text-gray-800">{{ title }}</h4>
+        <button type="button" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm" data-toggle="modal"
+                data-target="#exampleModalCenter">
+            <i class="fas fa-plus fa-sm text-white-50"></i>
+            Tambah Admin
+        </button>
+    </div>
+
+    <!-- DataTales Example -->
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                    <tr>
+                        {% for head in header %}
+                            <th>{{ head }}</th>
+                        {% endfor %}
+                        <th>Aksi</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for user in data %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>{{ user.created_at }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm mx-1" data-toggle="modal"
+                                        data-target="#editModal{{ user.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-danger btn-sm mx-1" data-toggle="modal"
+                                        data-target="#confirmDelete{{ user.id }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Edit untuk setiap data -->
+                        <div class="modal fade" id="editModal{{ user.id }}" tabindex="-1" role="dialog"
+                             aria-labelledby="editModalLabel{{ user.id }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editModalLabel{{ user.id }}">Edit Data
+                                            <span class="text-primary">{{ user.username }}</span>
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form method="POST" action="{{ url_for('main.edit_user', user_id=user.id) }}">
+                                        {{ form.hidden_tag() }}
+
+                                        <div class="modal-body">
+                                            <div class="form-group">
+                                                <label>Username</label>
+                                                <input type="text" name="username" class="form-control"
+                                                       value="{{ user.username }}">
+                                                {% for error in form.username.errors %}
+                                                    <small class="text-danger">{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Email</label>
+                                                <input type="email" name="email" class="form-control"
+                                                       value="{{ user.email }}">
+                                                {% for error in form.email.errors %}
+                                                    <small class="text-danger">{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="role">Role</label>
+                                                <select name="role" class="form-control" id="role">
+                                                    <option value="admin"
+                                                            {% if user.role == 'admin' %}selected{% endif %}>Admin
+                                                    </option>
+                                                    <option value="user"
+                                                            {% if user.role == 'user' %}selected{% endif %}>User
+                                                    </option>
+                                                </select>
+                                                {% for error in form.role.errors %}
+                                                    <small class="text-danger">{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary btn-user btn-block">
+                                                Update
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Modal Konfirmasi Hapus -->
+                        <div class="modal fade" id="confirmDelete{{ user.id }}" tabindex="-1" role="dialog"
+                             aria-labelledby="confirmDeleteLabel{{ user.id }}" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="confirmDeleteLabel{{ user.id }}">Konfirmasi Hapus
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Apakah Anda yakin ingin menghapus data ini?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary"
+                                                data-dismiss="modal">Batal
+                                        </button>
+                                        <!-- Form untuk Menghapus Data -->
+                                        <form method="POST"
+                                              action="{{ url_for('main.delete_user', user_id=user.id) }}"
+                                              class="d-inline">
+                                            {{ form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-danger">Ya, Hapus</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {#  modal #}
+    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
+         aria-labelledby="exampleModalCenterTitle"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Tambah Pengguna</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form action="{{ url_for('main.add_user') }}" method="POST" class="user">
+                    {{ form.hidden_tag() }}
+
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>Username</label>
+                            {{ form.username(class_='form-control') }}
+                            {% for error in form.username.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            {{ form.email(class_='form-control') }}
+                            {% for error in form.email.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            {{ form.password(class_='form-control', id="inputPassword") }}
+                            {% for error in form.password.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            {{ form.confirm_password(class_='form-control', id="inputConfirmPassword") }}
+                            {% for error in form.confirm_password.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        <div class="form-group">
+                            <label for="role">Role</label>
+                            {{ form.role(class_='form-control', id='role') }}
+                            {% for error in form.role.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-user btn-block">
+                            Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
