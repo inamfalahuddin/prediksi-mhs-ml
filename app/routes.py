@@ -1,11 +1,11 @@
+import json
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from . import db
 from .forms import RegistrationForm, LoginForm, CreateAcount, CreateMahasiswa
 from datetime import datetime
 from flask_login import login_user, logout_user, login_required, current_user
-
 from app.models.user import User
-from app.controllers import user_controller, mahasiswa_controller
+from app.controllers import user_controller, mahasiswa_controller, transkip_controller, prediksi_controller
 from app.controllers import auth_controller
 from .models.mahasiswa import Mahasiswa
 from .models.transkip import Transkip
@@ -141,12 +141,40 @@ def delete_mahasiswa(mahasiswa_id):
 def transkip():
     form = CreateMahasiswa()
 
-    transkip = Transkip.get_transkip()
-
-    print(transkip)
-
-    mahasiswa = Mahasiswa.query.all()
-    header = ['No', 'NPM', 'Nama', 'Program Studi', 'Status', 'Created At']
+    mahasiswa = Mahasiswa.get_data_transkip()
     title = 'Data Mahasiswa'
+    header = ['No', 'Nama Mahasiswa']
 
-    return render_template('mahasiswa.html', data=mahasiswa, header=header, title=title, form=form)
+    if any('ips' in mhs and mhs['ips'] for mhs in mahasiswa):
+        header = ['No', 'Nama Mahasiswa'] + ['IPS{}'.format(i + 1) for i in range(len(mahasiswa[0]['ips']))] + ['IPK',
+                                                                                                                'SKS']
+    return render_template('transkip.html', data=mahasiswa, header=header, title=title, form=form)
+
+
+@main.route('/edit_transkip/<int:mahasiswa_id>', methods=['POST'])
+@login_required
+def edit_transkip(mahasiswa_id):
+    transkip_controller.edit_transkip(mahasiswa_id)
+    return redirect(url_for('main.transkip'))
+
+
+@main.route('/prediksi', methods=['GET'])
+@login_required
+def prediksi():
+    nama = request.args.get('nama')
+
+    data = None
+
+    if nama is not None:
+        data = Mahasiswa.get_by_name(nama)
+
+        for mhs in data:
+            mhs.prediksi = prediksi_controller.prediksi_mahasiswa(mhs.id)
+
+    return render_template('prediksi.html', data=data)
+
+
+@main.route('/prediksi/<int:mahasiswa_id>', methods=['GET'])
+def prediksi_exce(mahasiswa_id):
+    prediksi_controller.prediksi_mahasiswa(mahasiswa_id)
+    return 'Hlalo sayang'

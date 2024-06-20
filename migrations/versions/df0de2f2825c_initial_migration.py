@@ -51,6 +51,7 @@ def upgrade():
                     sa.Column('mahasiswa_id', sa.Integer, sa.ForeignKey('mahasiswa.id'), nullable=False, unique=False),
                     sa.Column('semester', sa.String(length=255), nullable=True),
                     sa.Column('ips', sa.Float(), nullable=True),
+                    sa.Column('sks', sa.Integer(), nullable=True),
                     sa.Column('created_at', sa.DateTime(), nullable=True),
                     sa.Column('updated_at', sa.DateTime(), nullable=True),
                     sa.PrimaryKeyConstraint('id'),

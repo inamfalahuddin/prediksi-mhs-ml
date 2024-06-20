@@ -1,7 +1,5 @@
 from datetime import datetime
-
 from flask import flash, redirect, url_for
-
 from app import db
 from app.forms import CreateMahasiswa
 from app.models.mahasiswa import Mahasiswa

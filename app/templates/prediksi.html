@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Prediksi
+{% endblock %}
+
+{% block content %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <!-- Page Heading -->
+            <h1 class="h3 mb-2 text-gray-800">Prediksi Hasil Mahasiswa</h1>
+            <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
+                For more information about DataTables, please visit the.</p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-4">
+                <form action="{{ url_for('main.prediksi') }}" method="GET" class="form-inline navbar-search">
+                    <div class="input-group w-100">
+                        <input name="nama" type="text" class="form-control bg-light border-0 small"
+                               placeholder="Masukan nama mahasiswa untuk mulai prediksi"
+                               aria-label="Search" aria-describedby="basic-addon2">
+                        <div class="input-group-append">
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search fa-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            {% if data %}
+                {% for mahasiswa in data %}
+                    <div class="table">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <tr>
+                                <td width="30%">NPM</td>
+                                <td>: {{ mahasiswa.npm }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Nama Mahasiswa</td>
+                                <td>: {{ mahasiswa.nama }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Program Studi</td>
+                                <td>: {{ mahasiswa.prodi }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Tahun Masuk</td>
+                                <td>: {{ mahasiswa.tahun_masuk }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Status Mahasiswa</td>
+                                <td>: {{ mahasiswa.ket_aktif }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Hasil Prediksi Mahasiswa</td>
+                                <td>: <strong class="text-primary">{{ mahasiswa.prediksi }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                {% endfor %}
+
+            {% else %}
+                <div class="table">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <tr>
+                            <td class="text-center">Data tidak ditemukan !</td>
+                        </tr>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

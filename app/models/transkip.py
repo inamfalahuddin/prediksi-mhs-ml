@@ -1,9 +1,6 @@
 from datetime import datetime
 
-from flask import jsonify
-
 from app.extensions import db
-from sqlalchemy.sql import text
 
 
 class Transkip(db.Model):
@@ -12,8 +9,17 @@ class Transkip(db.Model):
     mahasiswa_id = db.Column(db.Integer, db.ForeignKey('mahasiswa.id'), nullable=False)
     semester = db.Column(db.String(50), nullable=False)
     ips = db.Column(db.Float, nullable=False)
+    sks = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, mahasiswa_id, semester, ips, sks, created_at=None, updated_at=None):
+        self.mahasiswa_id = mahasiswa_id
+        self.semester = semester
+        self.ips = ips
+        self.sks = sks
+        self.created_at = created_at or datetime.utcnow()
+        self.updated_at = updated_at or datetime.utcnow()
 
     def get_by_id(transkip_id):
         return Transkip.query.get(int(transkip_id))
@@ -31,32 +37,30 @@ class Transkip(db.Model):
     def __repr__(self):
         return f"Mahasiswa('{self.npm}', '{self.nama}', '{self.prodi}')"
 
-    def get_transkip():
-        result = db.session.execute(text("""
-              SELECT 
-                  m.id, 
-                  m.npm, 
-                  m.nama, 
-                  m.prodi, 
-                  COALESCE(GROUP_CONCAT(t.ips ORDER BY t.semester SEPARATOR ', '), '0') as ips
-              FROM 
-                  mahasiswa m
-              LEFT JOIN 
-                  transkip t 
-              ON 
-                  m.id = t.mahasiswa_id
-              GROUP BY 
-                  m.id, m.npm, m.nama, m.prodi;
-          """))
+    @staticmethod
+    def get_data_transkip(mahasiswa_id):
+        from sqlalchemy import func
+        import numpy as np
+        import pandas as pd
 
-        transkip_list = []
-        for row in result:
-            transkip_list.append({
-                'id': row.id,
-                'npm': row.npm,
-                'nama': row.nama,
-                'prodi': row.prodi,
-                'ips': row.ips
-            })
+        transkip_data = db.session.query(
+            func.group_concat(func.round(Transkip.ips, 2)).label('ips_array'),
+            func.sum(Transkip.sks).label('total_sks')
+        ).filter(Transkip.mahasiswa_id == mahasiswa_id).first()
 
-        return jsonify(transkip_list)
+        if transkip_data:
+            ips_array, total_sks = transkip_data
+            ips_array = [float(x) for x in ips_array.split(',')]  # split and convert to float
+
+            ipk = np.mean(ips_array)  # calculate IPK
+            ips_dict = {f'IPS{i + 1}': round(ips, 2) for i, ips in enumerate(ips_array)}  # round to 2 decimal places
+
+            row = [round(ipk, 2)]
+            for i in range(1, 7):
+                row.append(ips_dict.get(f'IPS{i}', 0.0))
+            row.append(int(total_sks))
+
+            X = pd.DataFrame([row], columns=['IPK', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5', 'IPS6', 'Total Sks'])
+            return X
+        else:
+            return None

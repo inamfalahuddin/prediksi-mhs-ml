@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.fields.choices import SelectField
-from wtforms.fields.numeric import IntegerField
+from wtforms.fields.numeric import IntegerField, FloatField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, NumberRange
 
 from app.models.user import User
@@ -66,3 +66,9 @@ class CreateMahasiswa(FlaskForm):
         user = User.query.filter_by(npm=npm.data).first()
         if user is not None:
             raise ValidationError('Nama does exist. Please unique npm.')
+
+
+class CreateTranskip(FlaskForm):
+    ips = FloatField('IPS', validators=[DataRequired()])
+    sks = IntegerField('Sks', validators=[DataRequired()])
+    submit = SubmitField('Submit')
