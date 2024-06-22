@@ -49,6 +49,34 @@ class Mahasiswa(db.Model):
 
         return self
 
+    def set_mahasiswa_from_excel(self):
+        try:
+            db.session.add(self)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error during adding Mahasiswa: {e}")
+            return None
+
+        try:
+            for semester_number in range(1, 8):
+                transkip = Transkip(
+                    mahasiswa_id=self.id,
+                    semester=f'Semester {semester_number}',
+                    ips=0.0,
+                    sks=0,
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db.session.add(transkip)
+                db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error during adding Transkip: {e}")
+            return None
+
+        return self
+
     @staticmethod
     def get_data_transkip():
         subquery = db.session.query(
@@ -90,3 +118,43 @@ class Mahasiswa(db.Model):
     @staticmethod
     def get_by_name(name):
         return Mahasiswa.query.filter(Mahasiswa.nama.like('%' + name + '%')).all()
+
+    def create_mahasiswa_from_excel(self, data):
+        try:
+            mahasiswa_list = []
+            for index, row in data.iterrows():
+                mahasiswa = Mahasiswa(
+                    npm=row['NPM'],
+                    nama=row['Nama'],
+                    prodi=row['Program Studi'],
+                    tahun_masuk=row['Tahun Masuk'],
+                    ket_aktif=row['Status Mahasiswa'],
+                    ket_lulus=row['Status Lulus'],
+                )
+                db.session.add(mahasiswa)
+                mahasiswa_list.append(mahasiswa)
+
+            db.session.commit()
+
+            for mahasiswa in mahasiswa_list:
+                row = data.loc[data['NPM'] == mahasiswa.npm].iloc[0]
+                for semester in range(1, 8):
+                    ips_column = f'IPS{semester}'
+                    sks_column = f'SKS{semester}'
+                    semester_number = f'Semester {semester}'
+                    ips_value = row[ips_column]
+                    sks_value = row[sks_column]
+
+                    transkip = Transkip(
+                        mahasiswa_id=mahasiswa.id,
+                        semester=f'Semester {semester_number}',
+                        ips=ips_value,
+                        sks=sks_value,
+                    )
+                    db.session.add(transkip)
+
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False
