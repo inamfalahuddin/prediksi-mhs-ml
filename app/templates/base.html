@@ -26,7 +26,12 @@
     <!-- Custom styles for this page -->
     <link href="{{ url_for('static', filename='vendor/datatables/dataTables.bootstrap4.min.css') }}" rel="stylesheet">
 
-
+    <style>
+        .suggestion:hover {
+            background-color: #eee; /* very light gray background on hover */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* add a subtle shadow on hover */
+        }
+    </style>
 </head>
 
 <body id="page-top">
@@ -38,8 +43,7 @@
     <ul class="navbar-nav bg-white border sidebar sidebar-light accordion" id="accordionSidebar">
 
         <!-- Sidebar - Brand -->
-        <a class="sidebar-brand d-flex align-items-center justify-content-center"
-           href="{{ url_for('main.dashboard') }}">
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
             <div class="sidebar-brand-icon rotate-n-15">
                 <i class="fas fa-laugh-wink"></i>
             </div>
@@ -65,29 +69,31 @@
         </div>
 
         <!-- Nav Item - Dashboard -->
-        {% if current_user.is_authenticated %}
-            {% if current_user.role == 'admin' %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.admin') }}">
-                        <i class="fas fa-fw fa-folder"></i> <span>Data Admin</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.mahasiswa') }}">
-                        <i class="fas fa-fw fa-table"></i> <span>Data Mahasiswa</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.transkip') }}">
-                        <i class="fas fa-fw fa-table"></i> <span>Data Transkip</span>
-                    </a>
-                </li>
-            {% endif %}
-        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.admin') }}">
+                <i class="fas fa-fw fa-folder"></i> <span>Data Admin</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.mahasiswa') }}">
+                <i class="fas fa-fw fa-table"></i> <span>Data Mahasiswa</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.transkip') }}">
+                <i class="fas fa-fw fa-table"></i> <span>Data Transkip</span>
+            </a>
+        </li>
         <li class="nav-item">
             <a class="nav-link" href="{{ url_for('main.prediksi') }}">
                 <i class="fas fa-fw fa-chart-area"></i>
                 <span>Prediksi Mahasiswa</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.laporan') }}">
+                <i class="fas fa-fw fa-chart-area"></i>
+                <span>Laporan Hasil Prediksi</span>
             </a>
         </li>
     </ul>
@@ -372,6 +378,7 @@
 
 <!-- Core plugin JavaScript-->
 <script src="{{ url_for('static', filename='vendor/jquery-easing/jquery.easing.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/chart.js/Chart.min.js') }}"></script>
 
 <!-- Custom scripts for all pages-->
 <script src="{{ url_for('static', filename='js/sb-admin-2.min.js') }}"></script>
@@ -397,6 +404,9 @@
     }
 </script>
 
+{% block script %}
+    {# template block here instead #}
+{% endblock %}
 </body>
 
 </html>

@@ -1,18 +1,16 @@
-import os
-import pandas as pd
-from flask import Blueprint, render_template, redirect, url_for, flash, request
-from werkzeug.utils import secure_filename
-
-import app
+import json
+from flask import Blueprint, jsonify, render_template, redirect, url_for, flash, request
 from . import db
-from .forms import RegistrationForm, LoginForm, CreateAcount, CreateMahasiswa, UplaodExcel
+from .forms import RegistrationForm, LoginForm, CreateAcount, CreateMahasiswa
+from datetime import datetime
 from flask_login import login_user, logout_user, login_required, current_user
 from app.models.user import User
 from app.controllers import user_controller, mahasiswa_controller, transkip_controller, prediksi_controller
 from app.controllers import auth_controller
 from .models.mahasiswa import Mahasiswa
-from app.decorators.auth import admin_required, user_required
 from .models.transkip import Transkip
+from .models.laporan import Laporan
+import json
 
 main = Blueprint('main', __name__)
 
@@ -72,7 +70,6 @@ def logout():
 
 @main.route('/admin', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def admin():
     # user = User.query.filter_by(role='admin').all()
     user = User.query.all()
@@ -86,7 +83,6 @@ def admin():
 
 @main.route('/add_user', methods=['POST'])
 @login_required
-@admin_required
 def add_user():
     user_controller.create_user()
     flash('Your account has been created!', 'success')
@@ -95,7 +91,6 @@ def add_user():
 
 @main.route('/edit_user/<int:user_id>', methods=['POST'])
 @login_required
-@admin_required
 def edit_user(user_id):
     user_controller.edit_user(user_id)
     flash('Your account has been updated!', 'success')
@@ -104,7 +99,6 @@ def edit_user(user_id):
 
 @main.route('/delete_user/<int:user_id>', methods=['POST'])
 @login_required
-@admin_required
 def delete_user(user_id):
     user_controller.delete_user(user_id)
     flash('Your account has been deleted!', 'success')
@@ -113,7 +107,6 @@ def delete_user(user_id):
 
 @main.route('/mahasiswa', methods=['GET'])
 @login_required
-@admin_required
 def mahasiswa():
     form = CreateMahasiswa()
 
@@ -126,7 +119,6 @@ def mahasiswa():
 
 @main.route('/add_mahasiswa', methods=['POST'])
 @login_required
-@admin_required
 def add_mahasiswa():
     mahasiswa_controller.create_mahasiswa()
     return redirect(url_for('main.mahasiswa'))
@@ -134,7 +126,6 @@ def add_mahasiswa():
 
 @main.route('/edit_mahasiswa/<int:mahasiswa_id>', methods=['POST'])
 @login_required
-@admin_required
 def edit_mahasiswa(mahasiswa_id):
     mahasiswa_controller.edit_mahasiswa(mahasiswa_id)
     return redirect(url_for('main.mahasiswa'))
@@ -142,7 +133,6 @@ def edit_mahasiswa(mahasiswa_id):
 
 @main.route('/delete_mahasiswa/<int:mahasiswa_id>', methods=['POST'])
 @login_required
-@admin_required
 def delete_mahasiswa(mahasiswa_id):
     mahasiswa_controller.delete_mahasiswa(mahasiswa_id)
     return redirect(url_for('main.mahasiswa'))
@@ -150,7 +140,6 @@ def delete_mahasiswa(mahasiswa_id):
 
 @main.route('/transkip', methods=['GET'])
 @login_required
-@admin_required
 def transkip():
     form = CreateMahasiswa()
 
@@ -166,7 +155,6 @@ def transkip():
 
 @main.route('/edit_transkip/<int:mahasiswa_id>', methods=['POST'])
 @login_required
-@admin_required
 def edit_transkip(mahasiswa_id):
     transkip_controller.edit_transkip(mahasiswa_id)
     return redirect(url_for('main.transkip'))
@@ -178,68 +166,51 @@ def prediksi():
     nama = request.args.get('nama')
 
     data = None
+    data_graph = []
 
     if nama is not None:
+        import array
         data = Mahasiswa.get_by_name(nama)
 
         for mhs in data:
             mhs.prediksi = prediksi_controller.prediksi_mahasiswa(mhs.id)
+            get_data_graph = prediksi_controller.prediksi_mahasiswa_ipk(mhs.id)
+            data_graph.append(get_data_graph)
 
-    return render_template('prediksi.html', data=data)
+            laporan = Laporan(mahasiswa_id=mhs.id, hasil_prediksi=mhs.prediksi)
+            laporan.insert_laporan()
+
+    json_data = json.dumps(data_graph, indent=4)
+
+    return render_template('prediksi.html', data=data, graph=json_data)
 
 
-@main.route('/upload_mahasiswa', methods=['POST'])
-@login_required
-def upload_mahasiswa():
-    file = request.files['excel_file']
-    filename = secure_filename(file.filename)
-    file_path = os.path.join(os.path.join(os.path.dirname(__file__), 'uploads'), filename)
-    file.save(file_path)
+@main.route('/prediksi/<int:mahasiswa_id>', methods=['GET'])
+def prediksi_exce(mahasiswa_id):
+    prediksi_controller.prediksi_mahasiswa(mahasiswa_id)
+    return redirect(url_for('main.mahasiswa'))
 
-    data = pd.read_excel(file_path)
 
-    try:
-        mahasiswa_list = []
-        transkip_list = []
-        for index, row in data.iterrows():
-            mahasiswa = Mahasiswa(
-                npm=row['NPM'],
-                nama=row['Nama'],
-                prodi=row['Program Studi'],
-                tahun_masuk=row['Tahun Masuk'],
-                ket_aktif=row['Status Mahasiswa'],
-                ket_lulus=row['Status Lulus'],
-            )
-            mahasiswa_list.append(mahasiswa)
+@main.route('/delete_selected', methods=['POST'])
+def delete_selected_mahasiswa():
+    selected_ids = request.form.getlist('selected_ids[]')
+    for mahasiswa_id in selected_ids:
+        mahasiswa_controller.delete_mahasiswa(mahasiswa_id)
 
-            for semester in range(1, 8):
-                ips_column = f'IPS{semester}'
-                sks_column = f'SKS{semester}'
-                semester_number = f'Semester {semester}'
-                ips_value = row[ips_column]
-                sks_value = row[sks_column]
+    return redirect(url_for('main.mahasiswa'))
 
-                transkip = Transkip(
-                    mahasiswa_id=None,  # Set to None for now, will be updated later
-                    semester=f'Semester {semester_number}',
-                    ips=ips_value,
-                    sks=sks_value,
-                )
-                transkip_list.append(transkip)
+@main.route('/laporan', methods=['GET'])
+def laporan():
+    # data = Mahasiswa.get_data_transkip()
+    data = Laporan.get_data_laporan()
 
-        db.session.add_all(mahasiswa_list)
-        db.session.commit()
+    return render_template('laporan.html', data=data)
 
-        for i, mahasiswa in enumerate(mahasiswa_list):
-            for transkip in transkip_list[i * 7:(i + 1) * 7]:
-                transkip.mahasiswa_id = mahasiswa.id
+@main.route('/get-nama-mahasiswa', methods=['GET'])
+def get_nama_mahasiswa():   
+    term = request.args.get('term')
+    mahasiswa_list = Mahasiswa.get_by_name_like(term)
 
-        db.session.add_all(transkip_list)
-        db.session.commit()
+    names = [mhs[0] for mhs in mahasiswa_list]
 
-        return redirect(url_for('main.mahasiswa'))
-
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error: {str(e)}", "danger")
-        return redirect(url_for('main.upload_mahasiswa'))
+    return jsonify({'names': names})

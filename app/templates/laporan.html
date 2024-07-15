@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Prediksi
+{% endblock %}
+
+{% block content %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <!-- Page Heading -->
+            <h1 class="h3 mb-2 text-gray-800">Laporan Hasil Prediksi Mahasiswa</h1>
+            <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
+                For more information about DataTables, please visit the.</p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            {% if data %}
+                {% for mahasiswa in data %}
+                    <div class="table">
+                        <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                            <tr>
+                                <td width="30%">NPM</td>
+                                <td>: <strong>{{ mahasiswa.npm }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Nama Mahasiswa</td>
+                                <td>: <a href="{{ url_for('main.prediksi', nama=mahasiswa.nama) }}">{{ mahasiswa.nama }}</a></td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Program Studi</td>
+                                <td>: {{ mahasiswa.prodi }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Tahun Masuk</td>
+                                <td>: {{ mahasiswa.tahun_masuk }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Status Mahasiswa</td>
+                                <td>: {{ mahasiswa.status }}</td>
+                            </tr>
+                            <tr>
+                                <td width="30%">Hasil Prediksi Mahasiswa</td>
+                                <td>: <strong class="text-primary">{{ mahasiswa.prediksi }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                {% endfor %}
+
+            {% else %}
+                <div class="table">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <tr>
+                            <td class="text-center">Data tidak ditemukan !</td>
+                        </tr>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <!-- Content Row -->
+        <div class="row" id="canvasArea">
+
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        var cardContainer = document.getElementById("canvasArea");
+        var canvasContainer = document.getElementById("areaCanvasGrafikIPK");
+
+        var data = {{ graph | safe }};
+
+        data.forEach(function (items, dataIndex) {
+            var cardHTML = `
+                <div class="col-12">
+                    <!-- Area Chart -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Grafik Indeks Prestasi Mahasiswa</h6>
+                            <p>Total SKS : <b id="sks_${dataIndex}"></b> | Total IPK : <b id="ipk_${dataIndex}"></b> | <b id="semester_${dataIndex}"></b> Semester</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area" id="areaCanvasGrafikIPK${dataIndex}">
+                                <canvas id="myAreaChartID_${dataIndex}"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+            cardContainer.innerHTML += cardHTML;
+        });
+
+        data.forEach(function (items, dataIndex) {
+            var canvasID = "myAreaChartID_" + dataIndex; // ID canvas yang dinamis
+            var canvasElement = document.createElement("canvas");
+            canvasElement.id = canvasID; // Set ID canvas
+            document.getElementById(`sks_${dataIndex}`).textContent = items['meta'].total_sks;
+            document.getElementById(`ipk_${dataIndex}`).textContent = items['meta'].ipk;
+            document.getElementById(`semester_${dataIndex}`).textContent = items['meta'].total_semester;
+
+            items['data'].forEach(function (mhs, index) {
+                var ctx = document.getElementById(canvasID).getContext("2d");
+                var myLineChart = new Chart(ctx, {
+                    type: "line",
+                    data: {
+                        labels: items['data'].map(function (mhs, index) {
+                            return `Semester ${index + 1}`;
+                        }),
+                        datasets: [
+                            {
+                                label: "Indeks Prestasi",
+                                lineTension: 0.3,
+                                backgroundColor: "rgba(78, 115, 223, 0.05)",
+                                borderColor: "rgba(78, 115, 223, 1)",
+                                pointRadius: 3,
+                                pointBackgroundColor: "rgba(78, 115, 223, 1)",
+                                pointBorderColor: "rgba(78, 115, 223, 1)",
+                                pointHoverRadius: 3,
+                                pointHoverBackgroundColor: "rgba(78, 115, 223, 1)",
+                                pointHoverBorderColor: "rgba(78, 115, 223, 1)",
+                                pointHitRadius: 10,
+                                pointBorderWidth: 2,
+                                data: items['data'].map(function (mhs) {
+                                    return mhs.ips;
+                                }),
+                            },
+                        ],
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: {
+                                left: 10,
+                                right: 25,
+                                top: 25,
+                                bottom: 0,
+                            },
+                        },
+                        scales: {
+                            xAxes: [
+                                {
+                                    time: {
+                                        unit: "date",
+                                    },
+                                    gridLines: {
+                                        display: false,
+                                        drawBorder: false,
+                                    },
+                                    ticks: {
+                                        maxTicksLimit: 7,
+                                    },
+                                },
+                            ],
+                            yAxes: [
+                                {
+                                    ticks: {
+                                        min: 0,
+                                        max: 4,
+                                        maxTicksLimit: 5,
+                                        padding: 10,
+                                    },
+                                    gridLines: {
+                                        color: "rgb(234, 236, 244)",
+                                        zeroLineColor: "rgb(234, 236, 244)",
+                                        drawBorder: false,
+                                        borderDash: [2],
+                                        zeroLineBorderDash: [2],
+                                    },
+                                },
+                            ],
+                        },
+                        legend: {
+                            display: false,
+                        },
+                        tooltips: {
+                            backgroundColor: "rgb(255,255,255)",
+                            bodyFontColor: "#858796",
+                            titleMarginBottom: 10,
+                            titleFontColor: "#6e707e",
+                            titleFontSize: 14,
+                            borderColor: "#dddfeb",
+                            borderWidth: 1,
+                            xPadding: 15,
+                            yPadding: 15,
+                            displayColors: false,
+                            intersect: false,
+                            mode: "index",
+                            caretPadding: 10,
+                            callbacks: {
+                                label: function (tooltipItem, chart) {
+                                    var datasetLabel =
+                                        chart.datasets[tooltipItem.datasetIndex].label || "";
+                                    return datasetLabel + ": " + tooltipItem.yLabel;
+                                },
+                            },
+                        },
+                    },
+                });
+            });
+        });
+    </script>
+{% endblock %}

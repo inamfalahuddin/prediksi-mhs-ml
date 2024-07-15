@@ -48,8 +48,10 @@ def edit_mahasiswa(mahasiswa_id):
 
 
 def delete_mahasiswa(mahasiswa_id):
-    mahasiswa = Mahasiswa.get_by_id(mahasiswa_id)
-    db.session.delete(mahasiswa)
-    db.session.commit()
-
-    flash('Your account has been deleted!', 'success')
+    mahasiswa = Mahasiswa.query.get(mahasiswa_id)
+    if mahasiswa:
+        db.session.delete(mahasiswa)
+        db.session.commit()
+        flash(f'Mahasiswa dengan ID {mahasiswa_id} telah dihapus', 'success')
+    else:
+        flash(f'Mahasiswa dengan ID {mahasiswa_id} tidak ditemukan', 'error')

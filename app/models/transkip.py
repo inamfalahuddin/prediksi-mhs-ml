@@ -35,7 +35,7 @@ class Transkip(db.Model):
         return self
 
     def __repr__(self):
-        return f"Mahasiswa('{self.npm}', '{self.nama}', '{self.prodi}')"
+        return f"Mahasiswa('{self.id}', '{self.mahasiswa_id}', '{self.semester}', '{self.ips}', '{self.sks}')"
 
     @staticmethod
     def get_data_transkip(mahasiswa_id):
@@ -62,5 +62,14 @@ class Transkip(db.Model):
 
             X = pd.DataFrame([row], columns=['IPK', 'IPS1', 'IPS2', 'IPS3', 'IPS4', 'IPS5', 'IPS6', 'Total Sks'])
             return X
+        else:
+            return None
+
+    @staticmethod
+    def get_transkip_by_mhs_id(mahasiswa_id):
+        transkips = Transkip.query.filter_by(mahasiswa_id=mahasiswa_id).all()
+
+        if transkips:
+            return transkips
         else:
             return None

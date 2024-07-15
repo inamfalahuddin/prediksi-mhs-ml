@@ -1,20 +1,14 @@
-import os
-
 from flask import Flask
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import Config
 from .extensions import db
-from app.models.user import User
+from app.models.user import User  # Pastikan impor ini benar
 
 
 def create_app():
     app = Flask(__name__, static_url_path='/static')
     app.config.from_object(Config)
-    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
-
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
 
     db.init_app(app)
     migrate = Migrate(app, db)

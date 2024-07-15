@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.fields.choices import SelectField
 from wtforms.fields.numeric import IntegerField, FloatField
@@ -61,7 +60,6 @@ class CreateMahasiswa(FlaskForm):
                             validators=[DataRequired()])
     tahun_masuk = IntegerField('Tahun Masuk',
                                validators=[DataRequired(), NumberRange(min=1900, max=datetime.now().year)])
-    excel_file = FileField('Excel File', validators=[FileAllowed(['xls', 'xlsx'])])
     submit = SubmitField('Submit')
 
     def validate_npm(self, npm):
@@ -73,9 +71,4 @@ class CreateMahasiswa(FlaskForm):
 class CreateTranskip(FlaskForm):
     ips = FloatField('IPS', validators=[DataRequired()])
     sks = IntegerField('Sks', validators=[DataRequired()])
-    submit = SubmitField('Submit')
-
-
-class UplaodExcel(FlaskForm):
-    excel_file = FileField('Excel File', validators=[FileAllowed(['xls', 'xlsx'])])
     submit = SubmitField('Submit')
